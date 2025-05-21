@@ -1,0 +1,130 @@
+#define BLYNK_TEMPLATE_ID "....."
+#define BLYNK_TEMPLATE_NAME "....."
+#define BLYNK_AUTH_TOKEN "....."   //Check this details on Your Blynk Dashboard
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <Keypad.h>
+#include <Servo.h>
+
+// WiFi credentials (Mobile Hotspot)
+char ssid[] = "your_Hotspot_Name";
+char pass[] = "Password";
+
+// Pins
+#define SERVO_PIN D8
+#define GREEN_LED_PIN D0
+#define RED_LED_PIN D3
+
+// Password system
+const String password = "1122";
+String input = "";
+
+Servo doorServo;
+bool doorOpen = false;
+unsigned long doorOpenTime = 0;
+
+// Keypad configuration
+const byte ROWS = 4;
+const byte COLS = 3;
+
+char keys[ROWS][COLS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
+};
+
+byte rowPins[ROWS] = {D5, D6, D7, D4};
+byte colPins[COLS] = {D1, D2, D9};
+
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+void setup() {
+  Serial.begin(9600);
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  doorServo.attach(SERVO_PIN);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+
+  digitalWrite(GREEN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
+
+  closeDoor();
+
+  Serial.println("System Ready: Enter Password...");
+}
+
+void loop() {
+  Blynk.run();
+
+  char key = keypad.getKey();
+
+  if (key) {
+    Serial.print("Key Detected: ");
+    Serial.println(key);
+
+    if (key == '#') {
+      if (input == password) {
+        Serial.println("Correct Password!");
+        openDoor();
+        digitalWrite(GREEN_LED_PIN, HIGH);
+        digitalWrite(RED_LED_PIN, LOW);
+        doorOpenTime = millis();
+      } else {
+        Serial.println("Wrong Password!");
+        digitalWrite(RED_LED_PIN, HIGH);
+        digitalWrite(GREEN_LED_PIN, LOW);
+        delay(2000);
+        digitalWrite(RED_LED_PIN, LOW);
+      }
+      input = "";
+    } else if (key == '*') {
+      input = "";
+      Serial.println("Input Cleared");
+    } else {
+      input += key;
+    }
+  }
+
+  if (doorOpen && millis() - doorOpenTime >= 5000) {
+    closeDoor();
+    digitalWrite(GREEN_LED_PIN, LOW);
+  }
+}
+
+// Blynk button on V0: Open Door remotely for 5 seconds
+BLYNK_WRITE(V0) {
+  int doorState = param.asInt();
+  if (doorState == 1) {
+    openDoor();
+    Blynk.virtualWrite(V0, 0);  // Reset the button state in the app
+    delay(5000);
+    closeDoor();
+  }
+}
+
+// Blynk switch for Green LED on V1
+BLYNK_WRITE(V1) {
+  int state = param.asInt();
+  digitalWrite(GREEN_LED_PIN, state);
+}
+
+// Blynk switch for Red LED on V2
+BLYNK_WRITE(V2) {
+  int state = param.asInt();
+  digitalWrite(RED_LED_PIN, state);
+}
+
+void openDoor() {
+  doorServo.write(180);
+  doorOpen = true;
+  Serial.println("Door Opened.");
+}
+
+void closeDoor() {
+  doorServo.write(0);
+  doorOpen = false;
+  Serial.println("Door Closed.");
+}
