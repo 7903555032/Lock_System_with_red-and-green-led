@@ -1,0 +1,6 @@
+📱 Blynk App Setup
+Widget	Virtual Pin	Mode	Purpose
+Button	V0	Switch	Open Door
+Switch	V1	Switch	Green LED
+Switch	V2	Switch	Red LED
+
