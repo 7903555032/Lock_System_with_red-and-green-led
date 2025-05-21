@@ -1,0 +1,23 @@
+Steps after  install library and Hardware Setup
+
+Update Your Credentials:
+
+Replace ssid and pass in the code with your hotspot name and password.
+
+Use your Blynk TEMPLATE_ID, TEMPLATE_NAME, and AUTH_TOKEN.
+
+Upload the Code:
+
+Use the Arduino IDE with ESP8266 board selected.
+
+Configure Blynk Dashboard:
+
+Add a Button (V0) – Label: Open Door
+
+Add Switches for:
+
+V1 – Green LED
+
+V2 – Red LED
+
+ 
